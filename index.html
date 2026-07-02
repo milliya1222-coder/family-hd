@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人類圖 · 家庭關係場（互動示範）</title>
+<style>
+  :root{
+    --bg:#f6f1ea; --bg2:#efe6d8; --ink:#3a332c; --ink-soft:#6b6155;
+    --line:#e0d5c4; --card:#fffdf9; --gold:#b9955f; --gold-d:#96733f;
+    --rose:#c98a86; --sage:#8ea58c; --sky:#7d9bb0; --plum:#9b8bb0;
+    --shadow:0 6px 22px rgba(120,95,60,.14);
+    --gen:#c98a86; --mg:#d19a5a; --proj:#7d9bb0; --mani:#9b8bb0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%, #fbf7f0, var(--bg));
+    color:var(--ink); line-height:1.75; -webkit-font-smoothing:antialiased;
+    padding-bottom:60px;
+  }
+  header{ text-align:center; padding:38px 20px 10px }
+  header h1{ font-size:26px; margin:0 0 6px; letter-spacing:2px; font-weight:700 }
+  header p{ margin:2px auto; color:var(--ink-soft); font-size:14px; max-width:640px }
+  .wrap{ max-width:1080px; margin:0 auto; padding:0 16px }
+
+  /* ---- tray ---- */
+  .section-title{ font-size:15px; color:var(--gold-d); letter-spacing:3px;
+    text-align:center; margin:30px 0 14px; font-weight:700 }
+  .section-title span{ display:inline-block; border-bottom:2px solid var(--line); padding:0 14px 6px }
+  .tray{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center }
+  .person{
+    position:relative; width:118px; background:var(--card); border:1px solid var(--line);
+    border-radius:16px; padding:14px 10px 12px; text-align:center; cursor:grab;
+    box-shadow:var(--shadow); transition:transform .15s, box-shadow .15s, opacity .2s;
+    touch-action:none; user-select:none;
+  }
+  .person:hover{ transform:translateY(-3px); box-shadow:0 10px 26px rgba(120,95,60,.22) }
+  .person.picked{ opacity:.4 }
+  .person.dragging{ opacity:.5 }
+  .ava{ width:52px;height:52px;border-radius:50%; margin:0 auto 8px; display:flex;
+    align-items:center;justify-content:center; font-size:24px; color:#fff; font-weight:700 }
+  .person .nm{ font-weight:700; font-size:15px }
+  .person .rl{ font-size:11px; color:var(--ink-soft); margin-top:1px }
+  .tbadge{ display:inline-block; margin-top:7px; font-size:10.5px; padding:2px 8px;
+    border-radius:20px; color:#fff; letter-spacing:.5px }
+  .b-gen{background:var(--gen)} .b-mg{background:var(--mg)}
+  .b-proj{background:var(--proj)} .b-mani{background:var(--mani)}
+  .info-dot{ position:absolute; top:8px; right:9px; width:18px;height:18px; border-radius:50%;
+    background:var(--bg2); color:var(--gold-d); font-size:12px; line-height:18px; cursor:pointer;
+    border:1px solid var(--line) }
+
+  /* ---- field ---- */
+  .field-outer{ margin-top:26px }
+  .field{
+    min-height:180px; border:2px dashed var(--line); border-radius:24px; background:rgba(255,253,249,.6);
+    padding:18px; transition:border-color .2s, background .2s; position:relative;
+  }
+  .field.over{ border-color:var(--gold); background:rgba(185,149,95,.08) }
+  .field-hint{ text-align:center; color:var(--ink-soft); font-size:14px; padding:34px 10px }
+  .field-hint b{ color:var(--gold-d) }
+  .chips{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:6px }
+  .chip{ display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--line);
+    border-radius:30px; padding:5px 12px 5px 6px; box-shadow:var(--shadow); font-weight:600; font-size:14px }
+  .chip .ava{ width:30px;height:30px;font-size:15px;margin:0 }
+  .chip .x{ cursor:pointer; color:var(--ink-soft); font-size:16px; margin-left:2px; padding:0 2px }
+  .chip .x:hover{ color:var(--rose) }
+  .clearbtn{ display:block; margin:14px auto 0; background:none; border:1px solid var(--line);
+    color:var(--ink-soft); border-radius:20px; padding:5px 16px; cursor:pointer; font-size:13px }
+  .clearbtn:hover{ border-color:var(--rose); color:var(--rose) }
+
+  /* ---- presets ---- */
+  .presets{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px }
+  .preset{ background:var(--bg2); border:1px solid var(--line); color:var(--ink);
+    border-radius:20px; padding:6px 14px; cursor:pointer; font-size:13px; transition:.15s }
+  .preset:hover{ background:var(--gold); color:#fff; border-color:var(--gold) }
+
+  /* ---- analysis ---- */
+  .analysis{ margin-top:22px }
+  .a-card{ background:var(--card); border:1px solid var(--line); border-radius:18px;
+    padding:20px 22px; margin-bottom:16px; box-shadow:var(--shadow); animation:rise .35s ease }
+  @keyframes rise{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none} }
+  .a-card h3{ margin:0 0 10px; font-size:16px; color:var(--gold-d); letter-spacing:1px;
+    display:flex; align-items:center; gap:8px }
+  .a-card h3 .ic{ font-size:18px }
+  .a-card p{ margin:6px 0 }
+  .a-card ul{ margin:8px 0 0; padding-left:2px; list-style:none }
+  .a-card li{ position:relative; padding-left:20px; margin:8px 0 }
+  .a-card li::before{ content:"❋"; position:absolute; left:0; color:var(--gold); font-size:12px; top:4px }
+  .tag{ display:inline-block; font-size:11px; padding:1px 8px; border-radius:12px;
+    background:var(--bg2); color:var(--gold-d); margin:0 4px 4px 0 }
+  .milliya-note{ background:linear-gradient(180deg,#fbf3ea,#f7ead9); border:1px solid #ecdcc4 }
+  .milliya-note h3{ color:#a86b48 }
+  .curated{ border-left:4px solid var(--gold) }
+  .small{ font-size:12.5px; color:var(--ink-soft) }
+
+  /* ---- modal ---- */
+  .modal-bg{ position:fixed; inset:0; background:rgba(58,51,44,.55); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center; z-index:50; padding:16px }
+  .modal-bg.on{ display:flex }
+  .modal{ background:var(--card); border-radius:20px; max-width:560px; width:100%;
+    max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.3); animation:rise .3s }
+  .modal-hd{ padding:20px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:14px;
+    position:sticky; top:0; background:var(--card); border-radius:20px 20px 0 0 }
+  .modal-hd .ava{ margin:0 }
+  .modal-hd .nm{ font-size:20px; font-weight:700 }
+  .modal-hd .rl{ font-size:13px; color:var(--ink-soft) }
+  .modal-hd .close{ margin-left:auto; cursor:pointer; font-size:24px; color:var(--ink-soft); line-height:1 }
+  .modal-bd{ padding:20px 24px }
+  .modal-bd img{ width:100%; border-radius:12px; border:1px solid var(--line); margin:6px 0 16px; background:#fff }
+  .chart-ph{ text-align:center; color:var(--ink-soft); font-size:13px; padding:26px 14px; margin:6px 0 16px;
+    border:1px dashed var(--line); border-radius:12px; background:var(--bg2) }
+  .kv{ display:grid; grid-template-columns:auto 1fr; gap:6px 14px; margin:10px 0 16px; font-size:14px }
+  .kv dt{ color:var(--gold-d); font-weight:700 }
+  .kv dd{ margin:0 }
+  .modal-bd h4{ color:var(--gold-d); margin:16px 0 6px; font-size:14.5px }
+  .modal-bd p{ margin:5px 0; font-size:14px }
+
+  footer{ text-align:center; color:var(--ink-soft); font-size:12px; margin-top:40px; padding:0 20px }
+  footer .disc{ max-width:680px; margin:10px auto; line-height:1.7 }
+  @media(max-width:520px){
+    .person{ width:calc(50% - 8px) } .ava{ width:46px;height:46px;font-size:21px }
+    header h1{font-size:22px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>人類圖 · 家庭關係場</h1>
+  <p>把家人拖進下面的圓場，看他們在一起時的能量會怎麼流動、要注意什麼。<br>
+  一次可以放兩個、三個，或全家。點右上角 <b>ⓘ</b> 看每個人的完整解讀。</p>
+</header>
+
+<div class="wrap">
+
+  <div class="section-title"><span>家人（拖我 · 或點一下加入）</span></div>
+  <div class="tray" id="tray"></div>
+
+  <div class="field-outer">
+    <div class="section-title"><span>關係場</span></div>
+    <div class="field" id="field">
+      <div class="field-hint" id="hint">把家人拖到這裡，或點卡片加入 —— 我會讀出他們在一起的樣子 ✨</div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <button class="clearbtn" id="clearBtn" style="display:none">清空關係場</button>
+
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <div class="analysis" id="analysis"></div>
+
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modal"></div>
+</div>
+
+<footer>
+  <div class="disc">
+    這份解讀以每個人可靠讀到的<b>類型 · 內在權威 · 人生角色 · 輪迴交叉</b>為根據，
+    結合人類圖經典的關係原理生成；屬於「能量傾向」的參考，不是命定，也不取代你對家人的真實認識與愛。<br>
+    製作：Birth with Milliya ｜ 互動示範作品（人物已以家庭角色代稱）。
+  </div>
+</footer>
+
+<script>
+/* ============== 資料：以圖卡可靠讀到的欄位為準 ============== */
+const PEOPLE = {
+  milliya:{name:"媽媽（本人）",role:"我 · 媽媽",emoji:"🌙",color:"var(--gen)",
+    type:"gen",profile:"3/5",definition:"一分人（單一定義）",authority:"sacral",
+    strategy:"等待回應",notSelf:"挫敗感",cross:"右角度交叉之愛之船4（10/15 ｜ 46/25）",img:""},
+  rio:{name:"大兒（7）",role:"老大 · 7歲 · 兒子",emoji:"🦁",color:"#d98c6a",
+    type:"gen",profile:"6/2",definition:"三分人（三重分裂）",authority:"sacral",
+    strategy:"等待回應",notSelf:"挫敗感",cross:"左角度交叉之輪迴（24/44 ｜ 13/7）",img:""},
+  yuna:{name:"小女（5）",role:"老二 · 5歲 · 女兒",emoji:"🌸",color:"var(--proj)",
+    type:"proj",profile:"6/2",definition:"二分人（分裂）",authority:"splenic",
+    strategy:"等待被邀請",notSelf:"苦澀",cross:"左角度交叉之個人主義2（38/39 ｜ 57/51）",img:""},
+  fumi:{name:"前夫",role:"前夫 · 孩子的爸",emoji:"🌊",color:"var(--mg)",
+    type:"mg",profile:"6/2",definition:"二分人（分裂）",authority:"emotional",
+    strategy:"等待回應，再告知",notSelf:"挫敗 / 憤怒",cross:"左角度交叉之二元性2（34/20 ｜ 40/37）",img:""},
+  john:{name:"外公",role:"爸爸（外公）",emoji:"⛰️",color:"var(--mani)",
+    type:"mani",profile:"1/3",definition:"一分人（單一定義）",authority:"emotional",
+    strategy:"告知後行動",notSelf:"憤怒",cross:"右角度交叉之統領3（47/22 ｜ 45/26）",img:""},
+  krisana:{name:"外婆",role:"媽媽（外婆）",emoji:"🔥",color:"#c56f4e",
+    type:"mg",profile:"5/1",definition:"二分人（分裂）",authority:"emotional",
+    strategy:"等待回應，再告知",notSelf:"挫敗 / 憤怒",cross:"左角度交叉之二元性（20/34 ｜ 37/40）",img:""},
+  kayla:{name:"姊姊",role:"姊姊",emoji:"🌿",color:"var(--sage)",
+    type:"gen",profile:"6/2",definition:"二分人（分裂）",authority:"emotional",
+    strategy:"等待回應",notSelf:"挫敗感",cross:"左角度交叉之衝突2（26/45 ｜ 6/36）",img:""},
+  yiyin:{name:"妹妹",role:"妹妹",emoji:"🕊️",color:"var(--sky)",
+    type:"proj",profile:"6/2",definition:"二分人（分裂）",authority:"splenic",
+    strategy:"等待被邀請",notSelf:"苦澀",cross:"左角度交叉之飛機2（6/36 ｜ 15/10）",img:""},
+};
+const ORDER=["milliya","rio","yuna","fumi","john","krisana","kayla","yiyin"];
+
+const TYPE={
+  gen:{label:"生產者",cls:"b-gen",
+    aura:"開放而包覆的能量場，會把周圍的人溫柔地涵蓋進來",
+    gift:"有穩定的薦骨動力，能一件件把事情做出來、把生活撐起來",
+    key:"用『回應』過生活——先等事情/問題來到，身體發出『嗯哼（要）』或『嗯嗯（不要）』再動",
+    sign:"對了就有滿足感，錯了就累積挫敗感"},
+  mg:{label:"顯示生產者",cls:"b-mg",
+    aura:"開放包覆又帶著爆發力的能量場，節奏比一般生產者更快",
+    gift:"能量多工、學得快、能跳步驟直接抵達",
+    key:"一樣先『回應』，但行動前多一步『告知』身邊的人，減少被擋、被誤會",
+    sign:"對了滿足，被卡住或沒被知會就挫敗、進而憤怒"},
+  proj:{label:"投射者",cls:"b-proj",
+    aura:"聚焦而穿透的能量場，能一眼看進別人的本質、看見別人怎麼運作",
+    gift:"是天生的引導者與看見者，能給出精準的指引",
+    key:"能量不像生產者持久，要『等待被邀請與被看見』，在重要的事上（關係、工作、住哪）尤其重要",
+    sign:"被認可就成功、發光；不被看見、硬撐就苦澀"},
+  mani:{label:"顯示者",cls:"b-mani",
+    aura:"封閉而推進的能量場，天生帶著『發起』的力量，別人會不自覺被推動或想擋",
+    gift:"能無中生有地啟動事情，是點火的人",
+    key:"行動前『告知』會受影響的人——不是討許可，是讓對方有心理準備，阻力就會少很多",
+    sign:"順暢就平靜，被控制、被擋就憤怒"},
+};
+const AUTH={
+  sacral:{label:"薦骨權威",how:"答案在當下的身體反應——喉頭的『嗯哼／嗯嗯』。適合用是非題來問他，讓身體回答，別逼他用大腦講理由"},
+  emotional:{label:"情緒權威",how:"當下沒有真相。要讓情緒的浪走完——重要決定至少睡過一晚、隔一段時間再確認，清明時的答案才算數"},
+  splenic:{label:"直覺權威",how:"答案是脾臟第一下、輕聲、只講一次的直覺。要在安靜、放鬆時才聽得到，不會重複提醒"},
+};
+const LINE={
+  "1":"研究者的地基——需要先搞懂、覺得安全才敢動",
+  "2":"隱士般的天賦——需要獨處充電，被看見時才被召喚出來",
+  "3":"試錯的實驗家——用親身碰撞學會，跌倒是他的學習方式，不是失敗",
+  "5":"被投射的救世／代罪——別人容易把期待投射在他身上，實用又能救火，但也容易被誤解",
+  "6":"人生的榜樣——前段（約30歲前）試錯體驗、中段抽離觀察、後段活成典範",
+};
+function lines(p){return p.split("/").map(n=>`${n} 線：${LINE[n]||""}`);}
+
+/* ============== 狀態 ============== */
+const scene=new Set();
+const tray=document.getElementById('tray');
+const field=document.getElementById('field');
+const chips=document.getElementById('chips');
+const hint=document.getElementById('hint');
+const analysis=document.getElementById('analysis');
+const clearBtn=document.getElementById('clearBtn');
+
+/* ---- 建立人物卡 ---- */
+ORDER.forEach(id=>{
+  const p=PEOPLE[id];
+  const el=document.createElement('div');
+  el.className='person'; el.dataset.id=id;
+  el.innerHTML=`
+    <div class="info-dot" data-info="${id}">ⓘ</div>
+    <div class="ava" style="background:${p.color}">${p.emoji}</div>
+    <div class="nm">${p.name}</div>
+    <div class="rl">${p.role}</div>
+    <span class="tbadge ${TYPE[p.type].cls}">${TYPE[p.type].label}</span>`;
+  tray.appendChild(el);
+});
+
+/* ---- 指標拖曳（滑鼠＋觸控通用）＋ 點擊加入 ---- */
+let drag=null;
+tray.addEventListener('pointerdown',e=>{
+  const dot=e.target.closest('[data-info]');
+  if(dot){ openModal(dot.dataset.info); return; }
+  const card=e.target.closest('.person');
+  if(!card) return;
+  const id=card.dataset.id;
+  drag={id,card,ghost:null,moved:false,sx:e.clientX,sy:e.clientY};
+  card.setPointerCapture(e.pointerId);
+  card.classList.add('dragging');
+});
+tray.addEventListener('pointermove',e=>{
+  if(!drag) return;
+  const dx=e.clientX-drag.sx, dy=e.clientY-drag.sy;
+  if(!drag.moved && Math.hypot(dx,dy)<8) return;
+  drag.moved=true;
+  if(!drag.ghost){
+    const g=drag.card.cloneNode(true);
+    g.style.cssText='position:fixed;pointer-events:none;z-index:99;width:118px;opacity:.9;transform:scale(.9);box-shadow:0 14px 30px rgba(0,0,0,.25)';
+    document.body.appendChild(g); drag.ghost=g;
+  }
+  drag.ghost.style.left=(e.clientX-59)+'px';
+  drag.ghost.style.top=(e.clientY-50)+'px';
+  const r=field.getBoundingClientRect();
+  const over=e.clientX>r.left&&e.clientX<r.right&&e.clientY>r.top&&e.clientY<r.bottom;
+  field.classList.toggle('over',over);
+});
+tray.addEventListener('pointerup',e=>{
+  if(!drag) return;
+  drag.card.classList.remove('dragging');
+  if(drag.ghost) drag.ghost.remove();
+  field.classList.remove('over');
+  if(!drag.moved){ toggle(drag.id); }      // 沒移動 = 點擊 → 加入/移除
+  else{
+    const r=field.getBoundingClientRect();
+    if(e.clientX>r.left&&e.clientX<r.right&&e.clientY>r.top&&e.clientY<r.bottom) add(drag.id);
+  }
+  drag=null;
+});
+
+function add(id){ scene.add(id); render(); }
+function toggle(id){ scene.has(id)?scene.delete(id):scene.add(id); render(); }
+clearBtn.onclick=()=>{ scene.clear(); render(); };
+
+/* ---- presets ---- */
+const PRESETS=[
+  {label:"媽 × 爸（外婆 × 外公）",ids:["krisana","john"]},
+  {label:"我 · 小女（5） · 大兒（7）",ids:["milliya","yuna","rio"]},
+  {label:"我 × 小女（5）（母女）",ids:["milliya","yuna"]},
+  {label:"我 × 大兒（7）（母子）",ids:["milliya","rio"]},
+  {label:"我 × 前夫（共親職）",ids:["milliya","fumi"]},
+  {label:"三姊妹（姊姊·我·妹妹）",ids:["kayla","milliya","yiyin"]},
+  {label:"原生家庭四口",ids:["john","krisana","kayla","milliya"]},
+  {label:"全家一起",ids:ORDER.slice()},
+];
+const presetsBox=document.getElementById('presets');
+PRESETS.forEach(pr=>{
+  const b=document.createElement('button'); b.className='preset'; b.textContent=pr.label;
+  b.onclick=()=>{ scene.clear(); pr.ids.forEach(i=>scene.add(i)); render(); analysis.scrollIntoView({behavior:'smooth',block:'start'}); };
+  presetsBox.appendChild(b);
+});
+
+/* ============== 渲染 ============== */
+function render(){
+  document.querySelectorAll('.person').forEach(el=>el.classList.toggle('picked',scene.has(el.dataset.id)));
+  chips.innerHTML='';
+  const ids=ORDER.filter(i=>scene.has(i));
+  hint.style.display=ids.length?'none':'block';
+  clearBtn.style.display=ids.length?'block':'none';
+  ids.forEach(id=>{
+    const p=PEOPLE[id];
+    const c=document.createElement('div'); c.className='chip';
+    c.innerHTML=`<span class="ava" style="background:${p.color}">${p.emoji}</span>${p.name}
+      <span class="x" data-x="${id}">×</span>`;
+    chips.appendChild(c);
+  });
+  chips.querySelectorAll('[data-x]').forEach(x=>x.onclick=()=>{scene.delete(x.dataset.x);render();});
+  renderAnalysis(ids);
+}
+
+function renderAnalysis(ids){
+  analysis.innerHTML='';
+  if(ids.length===0) return;
+  if(ids.length===1){ analysis.innerHTML=oneCard(ids[0]); return; }
+
+  const cur=curated(ids);
+  if(cur) analysis.insertAdjacentHTML('beforeend',cur);
+
+  analysis.insertAdjacentHTML('beforeend', energyCard(ids));
+  analysis.insertAdjacentHTML('beforeend', rhythmCard(ids));
+  analysis.insertAdjacentHTML('beforeend', remindCard(ids));
+  if(!scene.has('milliya')) {} else analysis.insertAdjacentHTML('beforeend', milliyaCard(ids));
+}
+
+/* --- 單人小卡 --- */
+function oneCard(id){
+  const p=PEOPLE[id], t=TYPE[p.type], a=AUTH[p.authority];
+  return `<div class="a-card"><h3><span class="ic">${p.emoji}</span>${p.name} · ${t.label} · ${p.profile}</h3>
+    <p><span class="tag">${a.label}</span><span class="tag">策略：${p.strategy}</span><span class="tag">非自己：${p.notSelf}</span></p>
+    <p>${t.gift}。${t.key}。</p>
+    <p class="small">想看完整解讀與人類圖，點卡片右上角的 ⓘ。再把第二個人拖進來，就會顯示他們在一起的關係場。</p></div>`;
+}
+
+/* --- 能量場 --- */
+function energyCard(ids){
+  const c=count(ids);
+  let body='';
+  const motors=c.gen+c.mg;
+  if(motors&&c.proj){
+    body+=`<li>場上有 <b>${motors} 位生產者／顯示生產者</b>提供源源不絕的能量，也有 <b>${c.proj} 位投射者</b>。生產者的忙碌會把投射者的能量場充飽，但投射者也很容易<b>接收並放大</b>這些能量——一時很high，事後卻特別累。投射者需要獨處放電的時間，別被『大家都在動』的氛圍捲著硬撐。</li>`;
+  }
+  if(c.mani){
+    body+=`<li>場上有<b>顯示者</b>（發起的人）。他天生想點火、想啟動，其他人容易不自覺地想擋或被推著走。給他<b>先說一聲</b>的空間，衝突就少一半。</li>`;
+  }
+  if(motors>=2){
+    body+=`<li><b>${motors} 個馬達</b>在一起，是很能『一起把事做出來』的組合——一起煮飯、一起收拾、一起玩，比坐著講道理更順。用<b>行動</b>連結，不要用<b>說教</b>連結。</li>`;
+  }
+  if(c.proj>=2){
+    body+=`<li>兩位投射者在一起，會彼此<b>看見、彼此懂</b>，是很療癒的組合；但兩個都在等邀請，可能都不主動——需要有人先開口說『我想聽你的』。</li>`;
+  }
+  if(!body) body='<li>這個組合的能量場溫和，關鍵仍在下面的決策節奏與提醒。</li>';
+  return card("🌀","這個組合的能量場", `<ul>${body}</ul>`);
+}
+
+/* --- 決策節奏 --- */
+function rhythmCard(ids){
+  const c=count(ids);
+  let body='';
+  if(c.emo>=1){
+    const who=ids.filter(i=>PEOPLE[i].authority==='emotional').map(i=>PEOPLE[i].name).join('、');
+    body+=`<li>場上有<b>情緒權威</b>的人（${who}）。這代表：<b>當下都不該定案</b>。開心時說好、生氣時說不，都不算數。重要的事——搬家、金錢、關係、要不要做某件大事——要<b>睡過一晚、等情緒的浪退了再確認</b>。急著要答案，只會逼出反悔。</li>`;
+  }
+  if(c.sacral>=1){
+    const who=ids.filter(i=>PEOPLE[i].authority==='sacral').map(i=>PEOPLE[i].name).join('、');
+    body+=`<li><b>薦骨權威</b>的人（${who}）答案在<b>當下的身體</b>：用是非題問他們（「你想去嗎？」而不是「你覺得呢？」），聽第一聲的『嗯哼／嗯嗯』。不要逼他們解釋理由，理由是大腦後來編的。</li>`;
+  }
+  if(c.splen>=1){
+    const who=ids.filter(i=>PEOPLE[i].authority==='splenic').map(i=>PEOPLE[i].name).join('、');
+    body+=`<li><b>直覺權威</b>的人（${who}）——脾臟的第一下直覺、輕聲、只講一次。要在安靜時聽。他們說『不要』時，往往沒有理由但很準，別要求他們說明。</li>`;
+  }
+  if(c.emo>=1 && c.sacral>=1){
+    body+=`<li><b>節奏差異提醒</b>：薦骨的人當下就有答案，情緒的人需要時間。快的別催慢的，慢的要記得回覆快的——不然一個覺得被拖、一個覺得被逼。約好『這件事我明天給你答案』就能兩全。</li>`;
+  }
+  return card("⏳","決策節奏（怎麼一起做決定）",`<ul>${body}</ul>`);
+}
+
+/* --- 相處提醒 --- */
+function remindCard(ids){
+  const c=count(ids);
+  let li=[];
+  ids.forEach(i=>{
+    const p=PEOPLE[i];
+    if(p.type==='proj') li.push(`<b>${p.name}（投射者）</b>：主動<b>邀請</b>他、具體<b>說出他哪裡好</b>。他不是懶，是能量本來就不持久；被看見他才發光，被當生產者使喚他會苦澀、退縮。`);
+    if(p.type==='mani') li.push(`<b>${p.name}（顯示者）</b>：別控制他、別替他決定。希望他配合，就<b>先讓他知道全貌</b>；他被尊重就平和，被擋就憤怒。`);
+  });
+  // 非自己主題：這個組合裡最該一起留意的
+  const themes=[...new Set(ids.map(i=>PEOPLE[i].notSelf))];
+  li.push(`這個組合的<b>情緒警報器</b>是：${themes.join('、')}。當家裡出現這些感覺，通常不是誰的錯，而是有人<b>沒照自己的策略在走</b>——回到各自的節奏，氣氛就會鬆開。`);
+  // 6線／2線隱士群
+  const sixes=ids.filter(i=>PEOPLE[i].profile.startsWith('6')||PEOPLE[i].profile.endsWith('/2'));
+  if(sixes.length>=2){
+    li.push(`場上有多位帶 <b>2 線（隱士）</b>的人——他們都需要<b>獨處充電</b>，別把『各自待著』誤會成冷淡或不合群，那是他們回血的方式。`);
+  }
+  return card("🤍","相處提醒",`<ul>${li.map(x=>`<li>${x}</li>`).join('')}</ul>`);
+}
+
+/* --- 給 媽媽（本人） 的一句 --- */
+function milliyaCard(ids){
+  const others=ids.filter(i=>i!=='milliya');
+  let msg='';
+  const c=count(others);
+  if(c.proj) msg=`你自己是<b>生產者</b>（用回應、靠身體的『要／不要』過日子）。當你和投射者（像 小女（5）、妹妹）在一起，最容易犯的好意錯誤，是用自己的標準要求他們『多做一點、撐一下』。他們做不到不是不夠愛你，是能量結構不同。你能給的最好的愛，是<b>主動邀請＋說出你看見他們的好</b>。`;
+  else if(c.emo) msg=`你是<b>薦骨權威</b>，當下就知道要或不要；但和情緒權威的家人（像爸媽、姊姊、前夫）互動，記得<b>給他們時間</b>。你想要一個明快的答案，他們需要一個晚上。把『現在就要講清楚』換成『我們明天再說』，關係會少很多硬碰硬。`;
+  else if(c.mani) msg=`和<b>顯示者</b>（爸爸 外公）相處，你的薦骨會很想『回應、把事做好』，但他要的往往不是你幫他做，而是<b>被告知、被尊重他自己來</b>。少一點『我來』，多一點『你想怎麼做，跟我說一聲就好』。`;
+  else msg=`你是<b>生產者 3/5</b>：3 線讓你靠親身試錯長智慧（跌倒不是失敗，是你學習的方式）；5 線讓別人容易把期待投射到你身上。在這個組合裡，記得回到你的策略——<b>等待回應</b>，別勉強發起。`;
+  return `<div class="a-card milliya-note"><h3><span class="ic">🌙</span>給 媽媽（本人） 的一句話</h3><p>${msg}</p></div>`;
+}
+
+function card(ic,title,body){ return `<div class="a-card"><h3><span class="ic">${ic}</span>${title}</h3>${body}</div>`; }
+
+function count(ids){
+  const c={gen:0,mg:0,proj:0,mani:0,emo:0,sacral:0,splen:0};
+  ids.forEach(i=>{const p=PEOPLE[i]; c[p.type]++;
+    if(p.authority==='emotional')c.emo++; if(p.authority==='sacral')c.sacral++; if(p.authority==='splenic')c.splen++;});
+  return c;
+}
+
+/* ============== 精選手寫解讀（重點組合） ============== */
+function curated(ids){
+  const k=ids.slice().sort().join('+');
+  const M=CURATED[k];
+  if(!M) return null;
+  return `<div class="a-card curated"><h3><span class="ic">✦</span>${M.title}</h3>${M.body}</div>`;
+}
+const CURATED={
+  "john+krisana":{title:"媽 × 爸 · 外婆 × 外公",body:`
+    <p>這是一對<b>顯示生產者 × 顯示者</b>、而且<b>兩個都是情緒權威</b>的組合。</p>
+    <ul>
+      <li><b>兩個情緒體在一起＝情緒會共振。</b>一個人的浪會把另一個人也帶上去。所以吵架時當下講的話都別當真——那是浪頭，不是真相。大事一定要<b>各自睡過一晚</b>再談。</li>
+      <li><b>外公 是顯示者，策略是「告知」。</b>他天生要自己啟動、自己來；外婆 若替他決定或攔他，他會<b>憤怒</b>。外婆 是顯示生產者，要先「回應」再「告知」。兩人若都記得『行動前先跟對方說一聲』，衝突會大幅減少——不是求許可，是給對方心理準備。</li>
+      <li><b>外公 1/3：</b>需要先弄懂、覺得地基穩才敢動（1線），又靠親身試錯累積經驗（3線）。他不是固執，是要自己驗證過才信。</li>
+      <li><b>外婆 5/1：</b>5線讓別人很容易把期待投射在她身上（覺得她應該能搞定一切），1線讓她需要安全感與知識底。她背了很多別人的投射，久了會累。</li>
+      <li><b>給你（媽媽（本人））看爸媽的角度：</b>他們的爭執多半不是不愛，是<b>兩個情緒權威在浪上對話</b>＋顯示者要自主。你不用當裁判，只要記得——他們冷靜後的版本，才是真心話。</li>
+    </ul>`},
+
+  "milliya+rio+yuna":{title:"我 · 大兒（7） · 小女（5）（一打二的能量真相）",body:`
+    <p>這是你每天的核心場：<b>兩個薦骨生產者（你＋大兒（7））＋一個投射者（小女（5））</b>。</p>
+    <ul>
+      <li><b>你和 大兒（7） 是同一種引擎。</b>都靠身體回應過日子、都用滿足／挫敗當指南針。和 大兒（7） 最順的相處是<b>一起動</b>＋<b>用是非題問他</b>（「你要不要先洗澡？」讓他薦骨回答），少用命令。他 6/2，需要獨處空間，也在長成一個未來的榜樣型孩子。</li>
+      <li><b>小女（5） 是投射者，夾在兩個馬達中間最需要被保護。</b>你和 大兒（7） 的能量場一直在運轉，小女（5） 會被充飽、跟著嗨，但她的電池<b>撐不了那麼久</b>，晚上或事後常會突然崩、鬧、黏人——那不是番，是<b>能量過載＋放電</b>。</li>
+      <li><b>小女（5） 要的是「被邀請」和「被看見」。</b>不要用『你看哥哥都可以，你怎麼不行』去比——那會直接踩到她的苦澀。改成<b>單獨邀請她</b>（「媽媽想跟你一起做這個，好不好？」）＋<b>具體稱讚</b>（「你剛剛那樣很貼心」）。她一被看見就發光。</li>
+      <li><b>實際節奏建議：</b>白天讓兩個生產者盡情放電做事，<b>幫 小女（5） 留一段自己的安靜時間</b>（獨處、畫畫、抱著你不說話都好），她的情緒會穩很多。</li>
+      <li><b>給你自己：</b>你也是生產者，會很想『把三個人都顧好、一直動』。但你的策略是<b>等待回應</b>——不用主動發起所有事，讓孩子的需求先來到，你再回應，你會比較不累、也比較不挫敗。</li>
+    </ul>`},
+
+  "milliya+yuna":{title:"我 × 小女（5） · 生產者媽 × 投射者女兒",body:`
+    <ul>
+      <li>你們是<b>不同引擎</b>的母女。你（生產者）能量持久、愈做愈有勁；小女（5）（投射者）能量像手機電池，會用完、需要充。</li>
+      <li>最重要的一句話：<b>小女（5） 不是不夠努力，她是投射者。</b>用生產者的標準要求她『再撐一下、再多做一點』，會讓她累積<b>苦澀</b>，長大變成討好或退縮。</li>
+      <li>她的天賦是<b>看見別人</b>——她可能很小就會講出很精準的觀察。回應她：『你怎麼知道的？你好會看喔』，這是在餵養她的天賦。</li>
+      <li>相處配方：<b>邀請＞命令，認可＞比較，獨處＞硬湊。</b>她是 6/2，2線需要獨處充電，6線讓她像個小大人——給她空間，她會用成熟回報你。</li>
+    </ul>`},
+
+  "milliya+rio":{title:"我 × 大兒（7） · 兩個薦骨生產者",body:`
+    <ul>
+      <li>同一種引擎，最容易懂彼此、也最容易『卡在一起』——兩個都有滿足／挫敗的開關。</li>
+      <li>和 大兒（7） 溝通的金鑰是<b>是非題</b>：把「你想吃什麼？」換成「你想吃麵嗎？」，讓他的薦骨用『嗯哼／嗯嗯』回答。開放式問題會讓他當機。</li>
+      <li>用<b>一起做</b>來連結：一起整理、一起運動、一起完成一件小事，比坐著講道理更能靠近他。</li>
+      <li>他 6/2 三分人，內在有比較多『需要外界串起來』的部分——意思是他有時需要別人、環境來幫他把狀態接起來，獨處和玩伴他都需要。允許他慢慢試錯（現在正是他 6線的前段體驗期）。</li>
+    </ul>`},
+
+  "fumi+milliya":{title:"我 × 前夫 · 共親職的節奏",body:`
+    <ul>
+      <li>你是生產者、前夫 是顯示生產者，<b>引擎相近</b>，都靠回應行動——這其實利於『分工把事做完』。</li>
+      <li>關鍵差異：<b>前夫 是情緒權威，你是薦骨權威。</b>你當下就有答案，他需要時間沉澱。談孩子的重要決定時，<b>別當場逼他表態</b>——給他一句『你想一下，明天再跟我說』，得到的答案會穩定得多，也少很多反悔與衝突。</li>
+      <li>他 6/2、非自己是挫敗／憤怒：當他被卡住或沒被知會時最容易上火。<b>行程、決定先讓他知道</b>，共親職會順很多。</li>
+      <li>你們的交叉都帶『左角度／二元性』的味道——關係裡本來就有很多『兩端拉扯』的功課，把它當成要學的主題，而不是誰對誰錯。</li>
+    </ul>`},
+
+  "kayla+milliya+yiyin":{title:"三姊妹 · 姊姊 · 我 · 妹妹",body:`
+    <ul>
+      <li>組合很特別：<b>姊姊（生產者·情緒）× 你（生產者·薦骨）× 妹妹（投射者·直覺）</b>——兩個引擎＋一個看見者。</li>
+      <li><b>妹妹 是投射者</b>，在姊妹堆裡最需要被<b>邀請發言</b>。她可能話不多，但一開口很準（直覺權威）。主動問她『你怎麼看？』，你們會得到意想不到的洞見。</li>
+      <li><b>姊姊 情緒權威</b>：她的『好』需要時間，別在她情緒上頭時敲定家族的事（聚餐、照顧爸媽的分工）。你薦骨快，記得等她。</li>
+      <li>三個人都帶 6線／2線——都需要<b>獨處</b>。姊妹感情好，不代表要黏在一起；各自有空間，反而更長久。</li>
+      <li>你（薦骨、當下有答案）很適合當三姊妹裡『提議的人』，但提議完<b>給另外兩個人時間回應</b>，別替她們決定。</li>
+    </ul>`},
+};
+
+/* ============== Modal ============== */
+const modalBg=document.getElementById('modalBg'), modal=document.getElementById('modal');
+function openModal(id){
+  const p=PEOPLE[id], t=TYPE[p.type], a=AUTH[p.authority];
+  modal.innerHTML=`
+    <div class="modal-hd">
+      <div class="ava" style="background:${p.color};width:48px;height:48px">${p.emoji}</div>
+      <div><div class="nm">${p.name}</div><div class="rl">${p.role}</div></div>
+      <div class="close" id="mClose">×</div>
+    </div>
+    <div class="modal-bd">
+      <div class="chart-ph">人類圖圖卡（示範版隱藏 · 保護當事人）</div>
+      <dl class="kv">
+        <dt>類型</dt><dd>${t.label}</dd>
+        <dt>人生角色</dt><dd>${p.profile}</dd>
+        <dt>定義</dt><dd>${p.definition}</dd>
+        <dt>內在權威</dt><dd>${a.label}</dd>
+        <dt>策略</dt><dd>${p.strategy}</dd>
+        <dt>非自己主題</dt><dd>${p.notSelf}</dd>
+        <dt>輪迴交叉</dt><dd>${p.cross}</dd>
+      </dl>
+      <h4>他是怎麼運作的</h4>
+      <p>${t.aura}。${t.gift}。</p>
+      <h4>怎麼過得順（策略）</h4>
+      <p>${t.key}。${t.sign}。</p>
+      <h4>怎麼做決定（內在權威）</h4>
+      <p>${a.how}。</p>
+      <h4>人生角色 ${p.profile}</h4>
+      ${lines(p.profile).map(l=>`<p>${l}</p>`).join('')}
+      <p class="small" style="margin-top:14px">＊以上根據圖卡可靠讀到的欄位＋人類圖經典原理整理，屬能量傾向參考。</p>
+    </div>`;
+  modalBg.classList.add('on');
+  document.getElementById('mClose').onclick=closeModal;
+}
+function closeModal(){ modalBg.classList.remove('on'); }
+modalBg.addEventListener('click',e=>{ if(e.target===modalBg) closeModal(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+
+render();
+</script>
+</body>
+</html>
